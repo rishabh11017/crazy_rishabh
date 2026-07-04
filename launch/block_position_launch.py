@@ -7,7 +7,11 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     pkg_dir = get_package_share_directory('block_position_publisher')
     world_file = os.path.join(pkg_dir, 'worlds', 'block_world.sdf')
-    
+    models_path = "/home/rishabhros/ros1/src/block_position_publisher/models"
+
+    os.environ["GZ_SIM_RESOURCE_PATH"] = (
+        models_path + ":" + os.environ.get("GZ_SIM_RESOURCE_PATH", "")
+    )
     # Start Gazebo Sim
     gz_sim = ExecuteProcess(
         cmd=['gz', 'sim', '-r', world_file],

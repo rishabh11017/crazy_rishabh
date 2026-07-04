@@ -49,7 +49,7 @@ class ForcePublisher(Node):
         # Publish to Gazebo
         self.gz_publisher.publish(gz_msg)
         
-        self.get_logger().info(f'Applied force: x={gz_msg.wrench.force.x}, y={gz_msg.wrench.force.y}, z={gz_msg.wrench.force.z}')
+        #self.get_logger().info(f'Applied force: x={gz_msg.wrench.force.x}, y={gz_msg.wrench.force.y}, z={gz_msg.wrench.force.z}')
         #self.get_logger().info(f'Applied torque: x={gz_msg.wrench.torque.x}, y={gz_msg.wrench.torque.y}, z={gz_msg.wrench.torque.z}')
 
 def main(args=None):

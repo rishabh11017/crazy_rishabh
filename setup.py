@@ -25,8 +25,8 @@ setup(
     entry_points={
         'console_scripts': [
             'force_publisher = block_position_publisher.force_publisher:main',
-            'new_controller = block_position_publisher.new_control:main',
-            'gamepad_receiver = block_position_publisher.gamepad:main',
+            'new_controller = block_position_publisher.geometric_controller:main',
+            'gamepad_receiver = block_position_publisher.gamepad1:main',
         ],
     },
 )

@@ -6,6 +6,9 @@ from nav_msgs.msg import Odometry
 import pandas as pd
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Float64MultiArray
+from block_position_publisher.trajectory_tracker import TrajectoryGenerator
+
+import time
 
 
 
@@ -36,6 +39,8 @@ class GeometricController(Node):
 
         self.Kw = np.diag([0.05, 0.05, 0.02])
         self.log_data = []
+        self.start_time=self.get_clock().now().nanoseconds / 1e9
+
 
 
 
@@ -49,6 +54,7 @@ class GeometricController(Node):
    
         # Odometry ≈ 40 Hz
         self.dt = 0.01
+       
         
 
         # ── Current state (updated by subscribers) ─────────────────
@@ -225,6 +231,11 @@ class GeometricController(Node):
 
     def control_loop(self):
         # ── Position & velocity errors ─────────────────────────────
+        time_now = self.get_clock().now().nanoseconds / 1e9
+        elapsed_time = time_now - self.start_time
+      
+        trajectory=TrajectoryGenerator(traj_type='circle', radius=1.0, omega=0.2, altitude=1.5, center=[0.0, 0.0])
+        self.pd, self.vd, self.ad, self.psi_d = trajectory.get_setpoint(elapsed_time, 0.01)
         if self.p is None:
             return
         ep = self.p - self.pd        # position error

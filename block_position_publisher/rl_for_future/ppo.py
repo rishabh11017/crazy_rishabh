@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np 
 
-from actor_critic import ActorCritic
-from rollout_buffer import RolloutBuffer
+from block_position_publisher.block_position_publisher.rl_for_future.actor_critic import ActorCritic
+from block_position_publisher.block_position_publisher.rl_for_future.rollout_buffer import RolloutBuffer
 class PPO:
     def __init__(
         self,
