@@ -31,8 +31,6 @@
     <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"></plugin>
     <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors"></plugin>
 
-    
-
     <model name="ground_plane">
       <static>true</static>
       <link name="link">
@@ -44,20 +42,15 @@
             </plane>
           </geometry>
         </collision>
-        <visual name="visual">
-          <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>100 100</size>
-            </plane>
-          </geometry>
-          <material>
-            <ambient>0.8 0.8 0.8 1</ambient>
-            <diffuse>0.8 0.8 0.8 1</diffuse>
-          </material>
-        </visual>
+        
       </link>
     </model>
+
+  <!-- <include>
+    <name>Rubicon</name>
+    <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Rubicon</uri>
+    <pose>0 0 -4 0 0 0</pose>
+</include> -->
 
     <model name="circular_box_0"><static>true</static><pose>20.000 0.000 0.5 0 0 0</pose><link name="link"><collision name="collision"><geometry><box><size>0.5 0.5 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>0.5 0.5 1.0</size></box></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse></material></visual></link></model>
     <model name="circular_box_1"><static>true</static><pose>19.021 6.180 0.5 0 0 0.314</pose><link name="link"><collision name="collision"><geometry><box><size>0.5 0.5 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>0.5 0.5 1.0</size></box></geometry><material><ambient>0 1 0 1</ambient><diffuse>0 1 0 1</diffuse></material></visual></link></model>
@@ -79,15 +72,15 @@
     <model name="circular_box_17"><static>true</static><pose>11.756 -16.180 0.5 0 0 5.341</pose><link name="link"><collision name="collision"><geometry><box><size>0.5 0.5 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>0.5 0.5 1.0</size></box></geometry><material><ambient>0.3 0.7 0.5 1</ambient><diffuse>0.3 0.7 0.5 1</diffuse></material></visual></link></model>
     <model name="circular_box_18"><static>true</static><pose>16.180 -11.756 0.5 0 0 5.655</pose><link name="link"><collision name="collision"><geometry><box><size>0.5 0.5 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>0.5 0.5 1.0</size></box></geometry><material><ambient>0.5 0.3 0.7 1</ambient><diffuse>0.5 0.3 0.7 1</diffuse></material></visual></link></model>
     <model name="circular_box_19"><static>true</static><pose>19.021 -6.180 0.5 0 0 5.969</pose><link name="link"><collision name="collision"><geometry><box><size>0.5 0.5 1.0</size></box></geometry></collision><visual name="visual"><geometry><box><size>0.5 0.5 1.0</size></box></geometry><material><ambient>0.5 0.7 0.3 1</ambient><diffuse>0.5 0.7 0.3 1</diffuse></material></visual></link></model>
-     
-    <include>
-      <uri>model://home/rishabhros/ros1/src/block_position_publisher/models/crazyflie</uri>
+  
+    <!-- <include>
+      <uri>model://home/pandit/ros2_ws/src/block_position_pusblisher/models/crazyflie</uri>
       <name>crazyflie</name>
       <pose>10 0 0 0 0 0</pose>
-    </include>
+    </include> -->
 
     <!-- Quadcopter Model -->
-    <model name="quadcopter">
+     <model name="quadcopter">
       <pose>0 0 2 0 0 0</pose>
 
       <!-- Central Block -->
@@ -127,6 +120,40 @@
           <visualize>true</visualize>
           <topic>/imu/data</topic>
         </sensor>
+          <sensor name="mono_camera" type="camera">
+        <pose>0.6 0 0.05 0 0 0</pose>
+        <camera>
+          <horizontal_fov>1.5708</horizontal_fov>
+          <image>
+            <width>144</width>
+            <height>144</height>
+            <format>L8</format>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>100</far>
+          </clip>
+        </camera>
+        <always_on>1</always_on>
+        <update_rate>30</update_rate>
+      </sensor>
+        <sensor name="mono1_camera" type="camera">
+        <pose>0.6 0 0.05 0 1.5708  0</pose>
+        <camera>
+          <horizontal_fov>1.5708</horizontal_fov>
+          <image>
+            <width>64</width>
+            <height>48</height>
+            <format>L8</format>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>100</far>
+          </clip>
+        </camera>
+        <always_on>1</always_on>
+        <update_rate>30</update_rate>
+      </sensor>
        
       </link>
 
@@ -293,7 +320,7 @@
       </joint>
 
       <!-- Pose Publisher Plugin -->
-      <plugin filename="libgz-sim-pose-publisher-system.so"
+        <plugin filename="libgz-sim-pose-publisher-system.so"
               name="gz::sim::systems::PosePublisher">
         <publish_world_pose>true</publish_world_pose>
         <update_rate>50</update_rate>
@@ -307,7 +334,7 @@
 
       </plugin>
 
-    </model>
-
+    </model>    
+   
   </world>
 </sdf>

@@ -7,9 +7,6 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Float64MultiArray
 from block_position_publisher.trajectory_tracker import TrajectoryGenerator
-from nav_msgs.msg import Path
-from geometry_msgs.msg import PoseStamped
-
 
 import time
 
@@ -32,11 +29,11 @@ class GeometricController(Node):
         super().__init__('geometric_controller')
 
             # ── Gains ──────────────────────────────────────────────────
-        self.Kp = np.diag([5.0, 5.0,5.0])
+        self.Kp = np.diag([5.0, 5.0, 5.0])
 
         self.Kd = np.diag([4, 4, 4])
 
-        self.Ki = np.diag([0.1,0.1,1.5])
+        self.Ki = np.zeros((3,3))
 
         self.KR = np.diag([0.3, 0.3, 0.05])
 
@@ -60,14 +57,6 @@ class GeometricController(Node):
        
         
 
-        self.path_pub = self.create_publisher(Path, "/trajectory", 10)
-        self.desired_path_pub = self.create_publisher(Path, "/desired_trajectory_path", 10)
-
-        self.desired_path = Path()
-        self.desired_path.header.frame_id = "world"
-
-        self.path = Path()
-        self.path.header.frame_id = "world"
         # ── Current state (updated by subscribers) ─────────────────
         self.p     = np.array([0.0, 0.0, 0])                       # position
         self.q     = np.array([1.0, 0.0, 0.0, 0.0])   # quaternion [w, x, y, z]
@@ -90,7 +79,8 @@ class GeometricController(Node):
         )
 
         # make a subscription for setting the value of self.pd
-       
+        self.pd_sub = self.create_subscription(Float64MultiArray, '/desired_trajectory', self.pd_callback, 10)
+
         self.imu_sub = self.create_subscription(Imu, '/imu/data', self.imu_callback, 10)
     
         # ── Publisher ──────────────────────────────────────────────
@@ -138,7 +128,36 @@ class GeometricController(Node):
             msg.twist.twist.linear.y,
             msg.twist.twist.linear.z,
         ])
-        self.publish_actual_trajectory(msg)
+      
+        # self.omega = np.array([
+        #     msg.twist.twist.angular.x,
+        #     msg.twist.twist.angular.y,
+        #     msg.twist.twist.angular.z,
+        # ])
+        timestamp = self.get_clock().now().nanoseconds / 1e9
+
+        row = {
+            'time': timestamp,
+
+            'px': self.p[0],
+            'py': self.p[1],
+            'pz': self.p[2],
+
+            'qx': self.q[0],
+            'qy': self.q[1],
+            'qz': self.q[2],
+            'qw': self.q[3],
+
+            'vx': self.v[0],
+            'vy': self.v[1],
+            'vz': self.v[2],
+
+            'wx': self.omega[0],
+            'wy': self.omega[1],
+            'wz': self.omega[2]
+        }
+
+        self.log_data.append(row)
 
     def imu_callback(self, msg: Imu):
         """Extract orientation, angular velocity, and linear acceleration from /imu/data."""
@@ -163,52 +182,28 @@ class GeometricController(Node):
             msg.linear_acceleration.y,
             msg.linear_acceleration.z,
         ])
-    def publish_actual_trajectory(self, msg):
-        """
-        Publish actual odometry trajectory.
-        Call inside odom_callback(msg).
-        """
+        
+        # 4. Generate timestamp and log data just like his structure
+        timestamp = self.get_clock().now().nanoseconds / 1e9
 
-        pose = PoseStamped()
-        pose.header = msg.header
-        pose.pose = msg.pose.pose
+        imu_row = {
+            'time': timestamp,
 
-        self.path.header = msg.header
-        self.path.poses.append(pose)
+            'imu_qw': self.q[0],
+            'imu_qx': self.q[1],
+            'imu_qy': self.q[3],
 
-        # Keep last 1000 points
-        if len(self.path.poses) > 100:
-            self.path.poses.pop(0)
+            'imu_wx': self.omega[0],
+            'imu_wy': self.omega[1],
+            'imu_wz': self.omega[2],
 
-        self.path_pub.publish(self.path)
-    def publish_desired_trajectory(self):
-        """
-        Publish desired trajectory (self.pd) as a Path in RViz.
-        Call once every control loop after updating self.pd.
-        """
+            'imu_ax': self.accel[0],
+            'imu_ay': self.accel[1],
+            'imu_az': self.accel[2]
+        }
 
-        pose = PoseStamped()
-
-        pose.header.stamp = self.get_clock().now().to_msg()
-        pose.header.frame_id = "quadcopter/odom"      # Match odometry frame
-
-        pose.pose.position.x = float(self.pd[0])
-        pose.pose.position.y = float(self.pd[1])
-        pose.pose.position.z = float(self.pd[2])
-
-        pose.pose.orientation.x = 0.0
-        pose.pose.orientation.y = 0.0
-        pose.pose.orientation.z = 0.0
-        pose.pose.orientation.w = 1.0
-
-        self.desired_path.header = pose.header
-        self.desired_path.poses.append(pose)
-
-        # Keep last 1000 points
-        if len(self.desired_path.poses) > 500:
-            self.desired_path.poses.pop(0)
-
-        self.desired_path_pub.publish(self.desired_path)    
+        self.log_data.append(imu_row)
+        
 
     # ──────────────────────────────────────────────────────────────
     # Math helpers
@@ -227,7 +222,7 @@ class GeometricController(Node):
     def vee(self, S: np.ndarray) -> np.ndarray:
         """Vee map: extracts the 3-vector from a skew-symmetric 3x3 matrix."""
         return np.array([S[2, 1], S[0, 2], S[1, 0]])
-   
+
     # ──────────────────────────────────────────────────────────────
     # Main control loop
     # ──────────────────────────────────────────────────────────────
@@ -238,21 +233,13 @@ class GeometricController(Node):
         # ── Position & velocity errors ─────────────────────────────
         time_now = self.get_clock().now().nanoseconds / 1e9
         elapsed_time = time_now - self.start_time
-        if elapsed_time<10:
-    
-            return 
-
       
-        trajectory=TrajectoryGenerator(traj_type='circle',radius=1.0, omega=0.2,  center=[0.0, 0.0])
+        trajectory=TrajectoryGenerator(traj_type='circle', radius=1.0, omega=0.2, altitude=1.5, center=[0.0, 0.0])
         self.pd, self.vd, self.ad, self.psi_d = trajectory.get_setpoint(elapsed_time, 0.01)
-        self.publish_desired_trajectory()
         if self.p is None:
             return
-        ep = self.p - self.pd 
-        ep=np.clip(ep,-1.0,1.0)
-             # position error
+        ep = self.p - self.pd        # position error
         ev = self.v - self.vd
-        ev=np.clip(ev,-1,1)
         print("vz =", self.v[2])         # velocity error
         self.ep_int += ep * self.dt    # integral of position error
         print("p =", self.p)

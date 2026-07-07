@@ -18,7 +18,12 @@ def generate_launch_description():
         output='screen',
         name='gz_sim'
     )
-    
+    receiver_node = Node(
+        package='block_position_publisher',
+        executable='receiver',
+        name='receiver_node',
+        output='screen',
+    )
     # Start the ros_gz_bridge for block pose (delayed to let Gazebo start)
     bridge = Node(
         package='ros_gz_bridge',
@@ -86,7 +91,7 @@ def generate_launch_description():
     # Added bridge_imu to the actions list here:
     delayed_bridge = TimerAction(
         period=2.0,
-        actions=[bridge, force_publisher, bridge_odom, new_controller, bridge_camera,bridge1_camera, gamepad_receiver, bridge_imu]
+        actions=[bridge, force_publisher, bridge_odom, new_controller, bridge_camera,bridge1_camera, gamepad_receiver, receiver_node, bridge_imu]
     )
     
     return LaunchDescription([

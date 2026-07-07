@@ -27,6 +27,9 @@ setup(
             'force_publisher = block_position_publisher.force_publisher:main',
             'new_controller = block_position_publisher.geometric_controller:main',
             'gamepad_receiver = block_position_publisher.gamepad1:main',
+            'receiver = block_position_publisher.reciever:main',
+            
+            
         ],
     },
 )
